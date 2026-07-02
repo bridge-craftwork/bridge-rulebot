@@ -23,15 +23,17 @@
 //!
 //! # Rule status
 //!
-//! This crate currently implements the decision *pipeline* and its output
-//! contract, with two always-correct rules (`forced` and `fallback-lowest`).
-//! The V1 rule set (docs/requirements.md) lands rule by rule on top of this
-//! scaffold; each rule ships with the worked examples from the requirements
-//! doc as its test cases.
+//! The V1 rule set from docs/requirements.md §5 is implemented: opening
+//! leads, second-hand play, third-hand play, attitude/count signals (all
+//! four method combinations), ruffs, discards, defender continuation, and
+//! minimal declarer play. Each rule's worked example from the requirements
+//! doc runs as a test in tests/rules.rs. The always-correct terminals
+//! (`forced`, `fallback-lowest`) keep the pipeline total.
 
 mod config;
 mod context;
 mod decision;
+mod derived;
 mod rules;
 
 pub use config::{AttitudeMethod, CountMethod, SignalConfig};

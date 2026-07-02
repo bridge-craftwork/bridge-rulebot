@@ -27,10 +27,14 @@ signal test matrix.
 
 ## Status
 
-Pipeline, output contract, and signaling configuration are in place with
-always-correct fallback rules (`forced`, `fallback-lowest`). The V1 rules
-from the requirements doc land incrementally, each with its worked examples
-as tests.
+**V1 rules implemented**: opening leads (§5.1), second hand (§5.2), third
+hand (§5.3), attitude + count signals in all four method combinations (§4),
+win-cheaply (§5.4), defender continuation (§5.5), ruff/overruff (§5.6),
+constrained attitude discards (§5.7), and minimal declarer play (§5.8).
+Every worked example in the requirements doc runs as a test
+([tests/rules.rs](tests/rules.rs)). Not yet integrated into consumers —
+that's the next step (bridge-table-service `bots.rs`, then the WASM
+wrapper).
 
 ## Build
 
