@@ -144,7 +144,21 @@ is suit-only; 4th-best is primarily NT).
 | `return-partners-suit` | Having won, return partner's originally led suit (top of remaining doubleton, low from 3+) | partner led ♥, you won trick 1 and hold ♥86 → ♥8 back |
 | `cash-established-winner` | Cash a plainly established winner rather than breaking a new suit | — |
 
-### 5.6 Discards (can't follow suit)
+### 5.6 Void in the led suit (trump contracts)
+
+Checked before the discard rules: when void in the led suit and holding
+trumps, winning by ruff is usually right.
+
+| Slug | Rule | Worked example |
+|---|---|---|
+| `ruff-to-win` | Ruff with the cheapest trump when the trick is currently held by the opponents | hearts led (you're void), declarer's ♥Q is winning, you hold ♠7 4 of trumps → ruff with ♠4 |
+| `overruff-cheaply` | If an opponent already ruffed, overruff with the cheapest sufficient trump when able | RHO ruffed with ♠6; you hold ♠J 8 → ♠8 |
+| `no-ruff-partners-winner` | Constraint: don't ruff (discard instead) when partner's card is already winning the trick | partner's ♥A is winning → discard, don't waste a trump |
+
+Ruff-vs-discard judgment beyond these (e.g. declining to ruff with a
+natural trump trick, trump promotion) is V2+.
+
+### 5.7 Discards (can't follow suit, no reason to ruff)
 
 | Slug | Rule | Worked example |
 |---|---|---|
@@ -152,7 +166,7 @@ is suit-only; 4th-best is primarily NT).
 | `discard-keep-parity` | Constraint: keep length parity with dummy's visible long suit | dummy has 4 clubs headed by honors; don't pitch your 4th club |
 | `discard-attitude` | Signal attitude per `SignalConfig` in the pitched suit | holding ♥Q1085 and wanting hearts, pitch ♥8 (standard) / low heart (UD) |
 
-### 5.7 Declarer (minimal in V1)
+### 5.8 Declarer (minimal in V1)
 
 `win-cheaply`, `cash-established-winner`, `fallback-lowest`. Anything
 smarter (drawing trumps, finesse planning) is V2+; multiplayer tables may

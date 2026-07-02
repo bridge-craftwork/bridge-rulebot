@@ -31,9 +31,10 @@ pub(crate) fn opening_lead(ctx: &LeadContext, _config: &SignalConfig) -> Result<
 
 /// Mid-play pipeline.
 ///
-/// V1 target order (requirements §Following suit): win cheaply when the
-/// trick can be won → second hand low / cover an honor → third hand high →
-/// attitude signal on partner's lead → count signal on declarer's lead →
+/// V1 target order (requirements §5.2–5.7): win cheaply when the trick can
+/// be won → second hand low / cover an honor → third hand high → attitude
+/// signal on partner's lead → count signal on declarer's lead → when void in
+/// a trump contract, ruff/overruff to win (never partner's winner) →
 /// suit-preference / attitude discards → fallback.
 pub(crate) fn play(ctx: &PlayContext, _config: &SignalConfig) -> Result<Fired, BotError> {
     forced(&ctx.legal)
