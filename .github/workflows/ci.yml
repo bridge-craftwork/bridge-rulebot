@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Sibling layout: the [patch] path in Cargo.toml expects ../bridge-types
+      # relative to this crate, same convention as bridge-table-service.
+      - name: Checkout bridge-rulebot
+        uses: actions/checkout@v4
+        with:
+          path: bridge-rulebot
+
+      - name: Checkout bridge-types
+        uses: actions/checkout@v4
+        with:
+          repository: bridge-craftwork/bridge-types
+          path: bridge-types
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Format check
+        working-directory: bridge-rulebot
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: bridge-rulebot
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        working-directory: bridge-rulebot
+        run: cargo test
+
+      - name: WASM cleanliness
+        working-directory: bridge-rulebot
+        run: cargo check --target wasm32-unknown-unknown
