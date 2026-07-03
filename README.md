@@ -49,8 +49,9 @@ effect and keeps the committed `Cargo.lock` pinned to git sources):
 cargo fmt --check
 ```
 
-Bare `cargo test` etc. also work and build against the pinned GitHub
-revisions of the sibling crates — that's what CI does.
+For CI-parity runs use `./dev-build.sh --ci test` — never bare cargo: with
+the local patches present, bare cargo silently rewrites `Cargo.lock` to
+local-path entries.
 
 ## Consuming this crate
 
