@@ -13,10 +13,3 @@ bridge-types = { git = "https://github.com/bridge-craftwork/bridge-types" }
 # Instant backed by performance.now(). Native builds never see it.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time = "1"
-
-# Sibling repos as sister directories (same layout as bridge-table-service:
-# developer Mac and any Docker build share it — see README "Consuming this
-# crate"). This patch applies when building bridge-rulebot standalone;
-# consumers declare their own [patch] at their workspace root.
-[patch."https://github.com/bridge-craftwork/bridge-types"]
-bridge-types = { path = "../bridge-types" }

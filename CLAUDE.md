@@ -30,12 +30,16 @@ Read these before changing behavior:
 
 ## Build & Test Commands
 
+**Use `./dev-build.sh` for local development builds, not bare cargo.** This repo depends on the sibling `bridge-types` crate as a git dependency, with a gitignored `[patch]` override in `.cargo/config.toml` redirecting it to the local checkout in `../bridge-types`. Cargo never lets a `[patch]` override an existing `Cargo.lock` pin, so bare `cargo build` silently compiles the GitHub revision instead of your local edits — and if the patch does take effect, it rewrites `Cargo.lock` with a local-path entry that must never be committed (CI has no sibling checkouts). The script keeps a separate local lock (`.cargo/dev.lock`), swaps it in around the cargo call, verifies the patched crate resolved to the local checkout, and leaves the committed `Cargo.lock` untouched.
+
 ```bash
-cargo test                                   # Run all tests
-cargo clippy --all-targets -- -D warnings    # Lint (warnings are errors)
-cargo fmt --check                            # Check formatting
-cargo check --target wasm32-unknown-unknown  # WASM cleanliness
+./dev-build.sh test                                   # Run all tests
+./dev-build.sh clippy --all-targets -- -D warnings    # Lint (warnings are errors)
+./dev-build.sh check --target wasm32-unknown-unknown  # WASM cleanliness
+cargo fmt --check                                     # no dependency resolution; bare cargo is fine
 ```
+
+Bare cargo is correct only when you *want* the committed lock's git pins — i.e. reproducing exactly what CI builds (pre-commit checks). The committed `Cargo.lock` must always pin `git+https://` sources for internal crates; never commit a lock where those entries have lost their `source =` lines.
 
 ## Pre-commit Requirements
 
@@ -60,7 +64,8 @@ Use SSH for all GitHub operations:
 ## Related Projects
 
 - `../bridge-types` — sibling crate providing `Card`, `Direction`, etc.
-  (path-patched; see `[patch]` in `Cargo.toml`)
+  (git dependency; patched to the local checkout via the gitignored
+  `.cargo/config.toml` — use `./dev-build.sh` so the patch takes effect)
 - `../bridge-table-service` — primary native consumer (`src/bots.rs`)
 - `../Bridge-Classroom` — frontend; pluggable-bot seam is
   `src/utils/cardplayBots.js`

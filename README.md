@@ -38,30 +38,36 @@ wrapper).
 
 ## Build
 
+For local development builds use `./dev-build.sh` (see CLAUDE.md — it makes
+the gitignored local-checkout patches in `.cargo/config.toml` actually take
+effect and keeps the committed `Cargo.lock` pinned to git sources):
+
 ```sh
-cargo test
-cargo clippy --all-targets -- -D warnings
+./dev-build.sh test
+./dev-build.sh clippy --all-targets -- -D warnings
+./dev-build.sh check --target wasm32-unknown-unknown   # core must stay wasm-clean
 cargo fmt --check
-cargo check --target wasm32-unknown-unknown   # core must stay wasm-clean
 ```
+
+Bare `cargo test` etc. also work and build against the pinned GitHub
+revisions of the sibling crates — that's what CI does.
 
 ## Consuming this crate
 
-Same sibling-crate pattern as the rest of the bridge-craftwork Rust repos
-(`bridge-types`, `bridge-encodings`): depend on the GitHub URL, patch to a
-sister directory for local development.
+Same pattern as the rest of the bridge-craftwork Rust repos (`bridge-types`,
+`bridge-encodings`): depend on the GitHub URL; for local development against
+a sister-directory checkout, add a `[patch]` in your repo's **gitignored**
+`.cargo/config.toml` (never in the committed `Cargo.toml`, and never commit a
+`Cargo.lock` whose entries lost their `source = "git+…"` lines).
 
 ```toml
 [dependencies]
 bridge-rulebot = { git = "https://github.com/bridge-craftwork/bridge-rulebot" }
 
+# .cargo/config.toml (gitignored), for local dev only:
 [patch."https://github.com/bridge-craftwork/bridge-rulebot"]
 bridge-rulebot = { path = "../bridge-rulebot" }
 ```
-
-Docker/CI consumers follow the buildx multi-context pattern documented in
-`bridge-table-service` ("Sibling crate path-deps"): the container layout
-mirrors the developer-Mac layout, so the one `[patch]` works everywhere.
 
 Consumers:
 
