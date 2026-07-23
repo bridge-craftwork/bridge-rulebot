@@ -27,3 +27,91 @@ jobs:
 
       - name: WASM cleanliness
         run: cargo check --target wasm32-unknown-unknown
+
+  # ── Rebuild the browser wasm and vendor it into the frontend ───────────────
+  # On every merge to main: check + build the wasm wrapper and push the fresh
+  # artifact straight into Bridge-Classroom's `src/vendor/bridge-rulebot-wasm/`.
+  # That commit lands on the frontend's main, which triggers its deploy — so a
+  # RulesBot change here reaches the live site with no manual rebuild.
+  #
+  # Requires a repo secret `CLASSROOM_DEPLOY_TOKEN`: a fine-grained PAT (or a
+  # GitHub App token) with `contents: write` on bridge-craftwork/Bridge-Classroom.
+  # The default GITHUB_TOKEN can't reach another repo — and, deliberately, a PAT
+  # push DOES trigger the frontend's workflows (a GITHUB_TOKEN push would not),
+  # which is how the redeploy fires.
+  vendor-wasm:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      # The wasm wrapper is a separate workspace (wasm/), so the core `test` job
+      # above doesn't lint it — run its own checks here before building.
+      - name: Wrapper checks (fmt + clippy)
+        working-directory: wasm
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+
+      # Graceful skip: before the token exists, still run the checks/build above
+      # but don't fail on the cross-repo push. Secrets can't be used in `if`
+      # directly, so surface presence as a step output.
+      - name: Token present?
+        id: guard
+        run: |
+          if [ -n "${{ secrets.CLASSROOM_DEPLOY_TOKEN }}" ]; then
+            echo "have_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::CLASSROOM_DEPLOY_TOKEN not set — skipping vendor+deploy. Add the secret to enable auto-redeploy."
+            echo "have_token=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install wasm-pack
+        run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+
+      - name: Build wasm (release)
+        working-directory: wasm
+        run: wasm-pack build --target web --release
+
+      - name: Checkout the frontend
+        if: steps.guard.outputs.have_token == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: bridge-craftwork/Bridge-Classroom
+          token: ${{ secrets.CLASSROOM_DEPLOY_TOKEN }}
+          path: classroom
+
+      - name: Vendor the fresh artifact
+        if: steps.guard.outputs.have_token == 'true'
+        run: |
+          dest=classroom/src/vendor/bridge-rulebot-wasm
+          # Copy only the generated files; leave the hand-written README alone.
+          cp wasm/pkg/bridge_rulebot_wasm.js \
+             wasm/pkg/bridge_rulebot_wasm_bg.wasm \
+             wasm/pkg/bridge_rulebot_wasm.d.ts \
+             wasm/pkg/bridge_rulebot_wasm_bg.wasm.d.ts \
+             wasm/pkg/package.json \
+             "$dest/"
+
+      - name: Commit + push if changed
+        if: steps.guard.outputs.have_token == 'true'
+        working-directory: classroom
+        run: |
+          git config user.name  "bridge-rulebot-bot"
+          git config user.email "bot@bridge-craftwork.invalid"
+          if git diff --quiet -- src/vendor/bridge-rulebot-wasm; then
+            echo "wasm artifact unchanged — nothing to vendor."
+            exit 0
+          fi
+          git add src/vendor/bridge-rulebot-wasm
+          git commit -m "chore(rulesbot): re-vendor wasm from bridge-rulebot@${GITHUB_SHA::7}
+
+          Auto-built and vendored by bridge-rulebot CI on merge to main.
+          Source: bridge-craftwork/bridge-rulebot@${GITHUB_SHA}"
+          git push origin HEAD:main
