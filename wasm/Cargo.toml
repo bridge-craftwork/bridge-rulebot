@@ -1,0 +1,41 @@
+# bridge-rulebot-wasm — the browser wrapper around the pure `bridge-rulebot`
+# core (see ../docs/architecture.md "One crate, two runtimes"). This crate adds
+# the ONLY wasm-specific things — wasm-bindgen + a JSON boundary — so the core
+# stays free of them and native consumers (the table service) pay nothing.
+#
+# Build:  wasm-pack build --target web --release   (output → ./pkg, an npm package)
+# The Bridge-Classroom frontend imports ./pkg from cardplayBots.js.
+#
+# Standalone `[workspace]` so this crate is NOT a member of the parent
+# bridge-rulebot package's build — that package is a git dependency of
+# bridge-table-service and must stay unaffected.
+[package]
+name = "bridge-rulebot-wasm"
+version = "0.1.0"
+edition = "2021"
+license = "Unlicense"
+description = "Browser (wasm) wrapper for the bridge-rulebot cardplay bot"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+bridge-rulebot = { path = ".." }
+bridge-types = { git = "https://github.com/bridge-craftwork/bridge-types" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Smaller/cleaner panics in the browser console during development.
+[dependencies.console_error_panic_hook]
+version = "0.1"
+optional = true
+
+[features]
+default = ["console_error_panic_hook"]
+
+[profile.release]
+opt-level = "s" # optimize the wasm blob for size
+lto = true
